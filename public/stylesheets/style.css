@@ -1,0 +1,25 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+#main{
+  height: 100%;
+  width: 100%;
+}
+
+.userImage{
+  height: 3rem;
+  width: 3rem;
+  overflow: hidden;
+  border-radius: 50%;
+}
+h1,h2,h3,h4,h5,h6,p,a{
+  margin: 0;
+}
+.chat h4, .chat p{
+   line-height: 1.2rem;
+}

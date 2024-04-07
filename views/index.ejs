@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bootstrap demo</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css"
+    rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+<style>
+  * {
+    margin: 0%;
+    padding: 0%;
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+  }
+
+  .msg {
+    width: fit-content;
+  }
+
+  .userImage {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 50%;
+    /* //16px=1rem1 */
+  }
+
+  #main>.right {
+      display: none;
+    }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    margin: 0;
+  }
+
+  .chat h4,
+  .chat p {
+    line-height: 1.2rem;
+  }
+
+  .conversationArea {
+    height: 79vh;
+  }
+  .right .top {
+    height: 13vh;
+  }
+
+  .right .bottom {
+    height: 8vh;
+  }
+</style>
+
+</head>
+
+<body>
+  <div id="main" class="w-100 h-100 d-flex">
+
+    <div class="left h-100 col-3 bg-success">
+
+      <div class="top mb-3 d-flex align-items-center bg-secondary justify-content-between px-2">
+        <div class="user d-flex gap-2 align-items-center p-2 text-light bg-secondary">
+          <img class="userImage" src="<%= user.img %>" alt="">
+          <h3>
+            <%= user.username %>
+          </h3>
+        </div>
+
+        <div class="groupActions">
+          <button onclick="createNewGroup()" class="btn bg-dark text-light">
+            <i class="ri-add-line"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="bottom border-top chats">
+
+      </div>
+    </div>
+
+    <div  class="right col-9 bg-dark">
+
+      <div class="top bg-secondary text-light">
+        <div class="currentChatUser p-2">
+          <div class="user d-flex gap-2 align-items-center">
+            <img id="currentChatUserImage" class="userImage" src="" alt="">
+            <h4 id="currentChatUserUsername">username</h4>
+          </div>
+        </div>
+      </div>
+      <div class="conversationArea w-100 p-2">
+        <!-- <div class="msg incomingMessage bg-light rounded-2 p-2">
+          
+        </div> -->
+
+      </div>
+
+      <div class="bottom d-flex">
+        <input id="message" type="text" class="form-control" placeholder="enter message">
+        <button onclick="sendMessage()" class="btn btn-success">Send</button>
+      </div>
+
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+    const senderId = '<%= user._id %>'
+    var currentChatUserId = null;
+
+    socket.emit('join-server', '<%= user.username %>')
+
+    socket.on('newUserJoined', msg => { // jo actual me aaya h uski details
+      appendNewChat(msg.img, msg.username, msg.lastMessage, msg.id);
+    })
+
+    function appendNewChat(img, username, lastMessage, chatId) { // naye template ko add krne ke liye
+
+      if (!document.querySelector(`#shery_${chatId}`)) {
+        const template = `<div id="shery_${chatId}" onclick="setCurrentChat('${img}','${username}','${chatId}')" class="chat d-flex p-2 bg-light gap-2 ">
+           <div class="left">
+             <img class="userImage" src="${img}" alt="">
+           </div>
+           <div class="right">
+             <h2>${username}</h2>
+             <p>${lastMessage}</p>
+           </div>
+         </div>`
+        document.querySelector('.chats').innerHTML += template
+      }
+    }
+
+    function sendMessage() {
+      const msgValue = document.querySelector('#message').value
+      // ye return kr dega agr message empty string hai to
+      if (!msgValue)
+      return
+      const template = `
+      <div class="msg outGoingMessage ms-auto p-2 rounded-2 m-1 bg-light" style="width: fit-content;">
+          ${msgValue}
+        </div>`
+
+      document.querySelector('.conversationArea').innerHTML += template
+
+      const msg = {
+        msg:msgValue,
+        receiver: currentChatUserId,
+        sender: senderId,
+      }
+      socket.emit('privateMessage',msg)
+
+      document.querySelector('input').value = "";
+    }
+
+    function putOutgoingMessage(msgValue){
+      if (!msgValue)
+        return
+      let template = `
+      <div class="msg outgoingMessage ms-auto p-2 rounded-2 m-1 bg-light" style="width: fit-content;">
+          ${msgValue}
+        </div>
+      `
+
+      document.querySelector('.conversationArea').innerHTML += template;
+
+    }
+
+    function putIncomingMessage(msg) {
+      if (!msg)
+        return
+      let template = `
+      <div class="msg incomingMessage p-2 rounded-2 m-1 bg-light" style="width: fit-content;">
+          ${msg}
+        </div>
+      `
+      document.querySelector('.conversationArea').innerHTML += template;
+
+    }
+    
+    function setCurrentChat(img, username, userId) {
+      document.querySelector("#currentChatUserImage").setAttribute('src', img)
+      document.querySelector("#currentChatUserUsername").textContent = username;
+      currentChatUserId = userId;
+      document.querySelector('#main > .right').classList.add('d-block')
+
+
+      socket.emit('getMessage',{
+        receiver: userId,
+        sender: senderId,
+      })
+    }
+
+    
+
+    socket.on('chatMessages', allMessages => {
+      document.querySelector(".conversationArea").innerHTML = "";
+
+      allMessages.forEach(singleMessage => {
+        if(singleMessage.sender === senderId){
+          putOutgoingMessage(singleMessage.msg);
+        }
+        else{
+          putIncomingMessage(singleMessage.msg);
+        }
+      })
+    })
+
+    socket.on('receivePrivateMessage', msg => {
+      if (msg.sender === currentChatUserId)
+        putIncomingMessage(msg.msg);
+    });
+
+    function createNewGroup(){
+      const groupName = prompt('Enter Group Name');
+      console.log(groupName);
+      socket.emit('createGroup',{
+        groupName,
+        senderId,
+      })
+    }
+
+  </script>
+</body>
+
+</html>
